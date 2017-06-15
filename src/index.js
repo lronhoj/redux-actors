@@ -1,26 +1,36 @@
-export function subscribe(store, actor) {
-    store.subscribe(() => {
-        actor(store.getState(), store.dispatch);
-    });
+import _ from 'lodash'
+
+export default function subscribe(store, actor) {
+    if (typeof actor !== 'function') {
+        return store.subscribe(combineActors(actor, store))
+    } else {
+        return store.subscribe(createActing(actor, state => state, store))
+    }
 }
 
-export function combineActors(actors) {
+const createActing  = (actor, select, store) => {
+  let currentState;
+  return () => {
+      const nextState = select(store.getState())
+      if (!_.isEqual(currentState, nextState)) {
+          currentState = nextState;
+          actor(currentState, store.dispatch);
+      }
+  }
+}
+
+function combineActors(actors, store) {
     const actorKeys = Object.keys(actors);
-    const finalActors = {};
+    const finalActors = [];
     for (let i = 0; i < actorKeys.length; i++) {
         const key = actorKeys[i];
         if (typeof actors[key] === 'function') {
-            finalActors[key] = actors[key];
+            finalActors.push(createActing(actors[key], state => state[key], store));
         }
     }
-    var finalActorKeys = Object.keys(finalActors);
-
-    return function combination(state, dispatch) {
-        for (let i = 0; i < finalActorKeys.length; i++) {
-            const key = finalActorKeys[i];
-            const actor = finalActors[key];
-            const previousStateForKey = state[key];
-            actor(previousStateForKey, dispatch);
-        }
+    return function combination() {
+        finalActors.forEach((actor) => {
+            actor()
+        })
     };
 }
