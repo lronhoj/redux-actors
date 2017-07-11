@@ -1,6 +1,6 @@
 {
   "name": "redux-actors",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A lib for subscribing to store similar to reducing actions",
   "main": "lib/index.js",
   "scripts": {
